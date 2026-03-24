@@ -10,39 +10,40 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 import asyncio
-import random
+import aiohttp
 
+# Load env
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-import os
-from pymongo import MongoClient
-
+# ENV
 MONGO_URL = os.getenv("MONGO_URL")
+FAL_API_KEY = os.getenv("FAL_API_KEY")
 
-client = MongoClient(MONGO_URL)
+# MongoDB (ASYNC - correct)
+client = AsyncIOMotorClient(MONGO_URL)
 db = client["hunyuan_video_db"]
 
+# App
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Models
+# ================= MODELS =================
+
 class VideoGenerationRequest(BaseModel):
     prompt: str = Field(..., min_length=10, max_length=500)
     style: str = Field(default="Cinematic")
-    
+
 class VideoGenerationResponse(BaseModel):
     job_id: str
     status: str
     message: str
     video_url: Optional[str] = None
-    
+
 class PromptHistory(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -51,143 +52,125 @@ class PromptHistory(BaseModel):
     video_url: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# Mock video generation service
-import aiohttp
-import asyncio
-import os
-
-FAL_API_KEY = os.getenv("FAL_API_KEY")
+# ================= REAL AI FUNCTION =================
 
 async def generate_video_real(prompt: str, style: str) -> str:
-    async with aiohttp.ClientSession() as session:
-        # Step 1: Submit request
-        async with session.post(
-            "https://queue.fal.run/fal-ai/hunyuan-video/submit",
-            headers={"Authorization": f"Key {FAL_API_KEY}"},
-            json={"prompt": prompt}
-        ) as response:
-            data = await response.json()
-            request_id = data["request_id"]
-
-        # Step 2: Check status
-        while True:
-            async with session.get(
-                f"https://queue.fal.run/fal-ai/hunyuan-video/status/{request_id}",
-                headers={"Authorization": f"Key {FAL_API_KEY}"}
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Step 1: Submit
+            async with session.post(
+                "https://queue.fal.run/fal-ai/hunyuan-video/submit",
+                headers={"Authorization": f"Key {FAL_API_KEY}"},
+                json={"prompt": prompt}
             ) as response:
-                result = await response.json()
+                data = await response.json()
+                request_id = data.get("request_id")
 
-                if result["status"] == "COMPLETED":
-                    return result["result"]["video"]["url"]
+                if not request_id:
+                    raise Exception("Failed to get request_id")
 
-            await asyncio.sleep(5)
-    """
-    Mock video generation with simulated delay.
-    In production, this would call Hunyuan Video API or local model.
-    """
-    logger.info(f"Generating video for prompt: {prompt[:50]}... with style: {style}")
-    
-    # Simulate generation delay (3-5 seconds)
-    await asyncio.sleep(random.uniform(3, 5))
-    
-    # Return a mock video URL (placeholder)
-    # In production, this would be actual generated video
-    mock_videos = [
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
-    ]
-    
-    return random.choice(mock_videos)
+            logger.info(f"Request ID: {request_id}")
+
+            # Step 2: Poll
+            while True:
+                async with session.get(
+                    f"https://queue.fal.run/fal-ai/hunyuan-video/status/{request_id}",
+                    headers={"Authorization": f"Key {FAL_API_KEY}"}
+                ) as response:
+                    result = await response.json()
+
+                    status = result.get("status")
+                    logger.info(f"Status: {status}")
+
+                    if status == "COMPLETED":
+                        return result["result"]["video"]["url"]
+
+                    elif status == "FAILED":
+                        raise Exception("Video generation failed")
+
+                await asyncio.sleep(5)
+
+    except Exception as e:
+        logger.error(f"Fal.ai Error: {str(e)}")
+        raise
+
+# ================= API =================
 
 @api_router.post("/generate-video", response_model=VideoGenerationResponse)
 async def generate_video(request: VideoGenerationRequest):
-    """
-    Generate video from text prompt.
-    Currently uses mock implementation with architecture ready for real Hunyuan Video integration.
-    """
     try:
         job_id = str(uuid.uuid4())
-        logger.info(f"Video generation request received: job_id={job_id}")
-        
-        # Generate video (mock)
-        video_url = await mock_generate_video(request.prompt, request.style)
-        
-        # Store in history
+        logger.info(f"Job started: {job_id}")
+
+        # ✅ REAL AI CALL
+        video_url = await generate_video_real(request.prompt, request.style)
+
+        # Save history
         history_entry = PromptHistory(
             id=job_id,
             prompt=request.prompt,
             style=request.style,
             video_url=video_url
         )
-        
+
         doc = history_entry.model_dump()
-        doc['timestamp'] = doc['timestamp'].isoformat()
+        doc["timestamp"] = doc["timestamp"].isoformat()
+
         await db.video_history.insert_one(doc)
-        
-        logger.info(f"Video generated successfully: job_id={job_id}")
-        
+
         return VideoGenerationResponse(
             job_id=job_id,
             status="completed",
             message="Video generated successfully",
             video_url=video_url
         )
-        
+
     except Exception as e:
-        logger.error(f"Video generation failed: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Generation failed: {str(e)}"
-        )
+        logger.error(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/history", response_model=List[PromptHistory])
 async def get_history():
-    """
-    Get last 10 video generation history entries.
-    """
     try:
         history = await db.video_history.find(
-            {}, 
-            {"_id": 0}
+            {}, {"_id": 0}
         ).sort("timestamp", -1).limit(10).to_list(10)
-        
-        # Convert ISO string timestamps back to datetime
+
         for entry in history:
-            if isinstance(entry['timestamp'], str):
-                entry['timestamp'] = datetime.fromisoformat(entry['timestamp'])
-        
+            if isinstance(entry["timestamp"], str):
+                entry["timestamp"] = datetime.fromisoformat(entry["timestamp"])
+
         return history
-        
+
     except Exception as e:
-        logger.error(f"Failed to fetch history: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch history: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @api_router.get("/")
 async def root():
-    return {"message": "Hunyuan Video Generation API", "status": "ready"}
+    return {"message": "Hunyuan Video API running 🚀"}
+
 
 @api_router.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "time": datetime.now(timezone.utc).isoformat()
     }
+
+# ================= APP CONFIG =================
 
 app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def shutdown():
     client.close()
