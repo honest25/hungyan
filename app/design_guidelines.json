@@ -1,0 +1,132 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "mission": "Create a 'Studio Light' aesthetic that feels like a high-end creative tool, not a generic SaaS. Minimal, precise, and art-forward.",
+    "principles": [
+      "Fusion over Imitation: Mix 'Swiss Print Design' with 'Laboratory Interface'.",
+      "Content is King: The generated video is the hero. UI recedes.",
+      "Negative Space: Use 3x more padding than comfortable.",
+      "No Gradient Overload: Use solid, high-contrast monochrome with one 'Holographic' accent."
+    ],
+    "anti_patterns": [
+      "No 'Inter' for headings.",
+      "No full-screen gradients.",
+      "No 'Purple/Teal' AI cliches.",
+      "No dense, cramped dashboards."
+    ]
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["500", "700"],
+      "tracking": "-0.02em",
+      "usage": "All section titles, modal headers, and the main 'Generate' text."
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Inputs, descriptions, history items."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Prompts, technical stats, seed numbers."
+    }
+  },
+  "colors": {
+    "theme": "light",
+    "palette": {
+      "background": "#FAFAFA",
+      "surface": "#FFFFFF",
+      "foreground": "#18181B",
+      "muted": "#F4F4F5",
+      "border": "#E4E4E7",
+      "primary": "#18181B",
+      "primary_foreground": "#FFFFFF",
+      "accent_glow": "linear-gradient(135deg, #FF3BFF 0%, #ECBFBF 50%, #5C24FF 100%)",
+      "success": "#10B981",
+      "error": "#EF4444"
+    },
+    "rules": [
+      "Use 'surface' for cards and 'background' for the main app canvas.",
+      "Text should never be pure black (#000000). Use #18181B.",
+      "Borders should be subtle (#E4E4E7) or removed entirely in favor of shadow."
+    ]
+  },
+  "layout": {
+    "spacing_scale": {
+      "container_padding": "p-8 md:p-12 lg:p-16",
+      "section_gap": "gap-12",
+      "item_gap": "gap-6"
+    },
+    "grid_system": {
+      "history_gallery": "Bento Grid: grid-cols-1 md:grid-cols-3 lg:grid-cols-4. Mix col-span-2 for 'Hero' generations.",
+      "style_selector": "Flex scroll or Grid: grid-cols-2 md:grid-cols-4 lg:grid-cols-6"
+    },
+    "containers": {
+      "prompt_box": "Floating 'Command Center' style. Max width 800px. Centered initially, moves to bottom after generation.",
+      "preview_player": "Cinematic aspect ratio (16:9). No visible controls until hover."
+    }
+  },
+  "components": {
+    "shadcn_overrides": {
+      "button": "Sharp corners or full pill. No default 'rounded-md'. Hover: Scale 1.02 + Shadow-lg.",
+      "input": "Height: h-12 or h-14. Border-0. Shadow-sm. Focus: Ring-2 Ring-black/5.",
+      "card": "Border-0. Shadow-sm. Hover: Shadow-md Transition-all.",
+      "slider": "Track: h-2 bg-secondary. Thumb: h-6 w-6 border-2 border-primary bg-background."
+    },
+    "custom_elements": {
+      "prompt_input": {
+        "style": "Glassmorphism: bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl.",
+        "animation": "Animate layout change from Center to Bottom upon first generation."
+      },
+      "style_card": {
+        "style": "Aspect-square or 4:3. Image full bleed. Text overlay on hover only."
+      }
+    }
+  },
+  "assets": {
+    "style_presets": [
+      {
+        "name": "Cinematic",
+        "url": "https://images.unsplash.com/photo-1695114584354-13e1910d491b",
+        "description": "High contrast, dramatic lighting, movie scene."
+      },
+      {
+        "name": "Anime",
+        "url": "https://images.unsplash.com/photo-1719516937211-7d70087dd03d",
+        "description": "2D animation style, cel shaded."
+      },
+      {
+        "name": "Cyberpunk",
+        "url": "https://images.unsplash.com/photo-1758404196311-70c62a445e9c",
+        "description": "Neon lights, futuristic city, tech noir."
+      },
+      {
+        "name": "3D Render",
+        "url": "https://images.unsplash.com/photo-1763025924393-59a46f8d64bf",
+        "description": "Octane render, abstract, glossy."
+      }
+    ]
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-2xl bg-white/70 border-white/40",
+    "shadows": "shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+    "motion": "Use Framer Motion for: 1. Prompt box movement. 2. Staggered entrance of history items. 3. Loading state pulse."
+  },
+  "instructions_to_main_agent": [
+    "1. UPDATE TAILWIND CONFIG: Add 'Outfit' and 'DM Sans' fonts. Update colors to the palette provided.",
+    "2. CLEANUP: Remove generic App.css styles. Reset body margins.",
+    "3. COMPONENT CUSTOMIZATION: When using Shadcn, strip the 'default' radius and apply specific rounded classes (e.g., 'rounded-2xl' for cards, 'rounded-full' for buttons).",
+    "4. MOCK API: Create a simulated delay (3s) for video generation. Show a progress bar that isn't linear (fast then slow).",
+    "5. DATA-TESTID: Ensure every interactive element (Button, Input, Card) has a data-testid attribute.",
+    "6. PROMPT HISTORY: Store in localStorage for MVP. Display in a Sidebar or Grid.",
+    "7. VIDEO PLAYER: Use a standard HTML5 video tag with custom styled controls (play/pause overlay)."
+  ],
+  "UNIVERSAL_GUIDELINES": [
+    "Don't make generic centered layouts.",
+    "Create depth through layered design elements.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Never use AI assistant Emoji characters."
+  ]
+}
