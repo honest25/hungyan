@@ -15,9 +15,13 @@ import random
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+import os
+from pymongo import MongoClient
+
+MONGO_URL = os.getenv("MONGO_URL")
+
+client = MongoClient(MONGO_URL)
+db = client["hunyuan_video_db"]
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
