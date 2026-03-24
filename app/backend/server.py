@@ -52,7 +52,35 @@ class PromptHistory(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Mock video generation service
-async def mock_generate_video(prompt: str, style: str) -> str:
+import aiohttp
+import asyncio
+import os
+
+FAL_API_KEY = os.getenv("FAL_API_KEY")
+
+async def generate_video_real(prompt: str, style: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        # Step 1: Submit request
+        async with session.post(
+            "https://queue.fal.run/fal-ai/hunyuan-video/submit",
+            headers={"Authorization": f"Key {FAL_API_KEY}"},
+            json={"prompt": prompt}
+        ) as response:
+            data = await response.json()
+            request_id = data["request_id"]
+
+        # Step 2: Check status
+        while True:
+            async with session.get(
+                f"https://queue.fal.run/fal-ai/hunyuan-video/status/{request_id}",
+                headers={"Authorization": f"Key {FAL_API_KEY}"}
+            ) as response:
+                result = await response.json()
+
+                if result["status"] == "COMPLETED":
+                    return result["result"]["video"]["url"]
+
+            await asyncio.sleep(5)
     """
     Mock video generation with simulated delay.
     In production, this would call Hunyuan Video API or local model.
