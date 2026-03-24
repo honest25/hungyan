@@ -1,1 +1,44 @@
+.video-player-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
+.prompt-gradient-border {
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #FF3BFF 0%, #ECBFBF 50%, #5C24FF 100%) border-box;
+  border: 2px solid transparent;
+}
+
+.holographic-text {
+  background: linear-gradient(135deg, #FF3BFF 0%, #ECBFBF 50%, #5C24FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glassmorphism {
+  backdrop-filter: blur(24px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.shadow-custom {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+.loading-bar-wrapper {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #F4F4F5;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.loading-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #18181B, #52525B);
+  border-radius: 9999px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
