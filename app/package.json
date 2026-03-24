@@ -60,6 +60,9 @@
     "build": "craco build",
     "test": "craco test"
   },
+  "scripts": {
+  "build": "react-scripts build"
+}
   "browserslist": {
     "production": [
       ">0.2%",
